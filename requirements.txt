@@ -1,0 +1,6 @@
+pandas
+yfinance
+fredapi
+python-dotenv
+jinja2
+matplotlib
