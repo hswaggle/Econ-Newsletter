@@ -96,7 +96,14 @@ class EconomicDataFetcher:
             'CPIAUCSL': 'CPI (Inflation)',
             'DFF': 'Fed Funds Rate',
             'DGS10': '10-Year Treasury Yield',
-            'UMCSENT': 'Consumer Sentiment'
+            'UMCSENT': 'Consumer Sentiment', 
+            'HOUST': 'Housing Starts',
+            'ICSA': 'Initial Jobless Claims',
+            'MORTGAGE30US': '30-Year Mortgage Rate',
+            'EXHOSLUSM495S': 'Existing Home Sales',
+            'PCE': 'Personal Consumption Expenditure',
+            'PSAVERT': 'Personal Savings Rate',
+            'M2SL': 'M2 Money Supply'
         }
         
         economic_data = {}

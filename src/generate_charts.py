@@ -67,7 +67,14 @@ def generate_all_charts(fred_api_key, use_cache=True):
         'CPIAUCSL': {'name': 'CPI (Inflation)', 'color': '#e67e22'},
         'DFF': {'name': 'Fed Funds Rate', 'color': '#3498db'},
         'DGS10': {'name': '10-Year Treasury Yield', 'color': '#2ecc71'},
-        'UMCSENT': {'name': 'Consumer Sentiment', 'color': '#9b59b6'}
+        'UMCSENT': {'name': 'Consumer Sentiment', 'color': '#9b59b6'},
+        'HOUST': {'name': 'Housing Starts', 'color':  "#401bc5"},
+        'ICSA': {'name': 'Initial Jobless Claims', 'color':  "#d11884"},
+        'MORTGAGE30US': {'name': '30-Year Mortgage Rate', 'color':  "#0b5d8d"},
+        'EXHOSLUSM495S': {'name': 'Existing Home Sales',  'color':  "#0b8d6d"},
+        'PCE': {'name': 'Personal Consumption Expenditure', 'color':  "#dabc14"},
+        'PSAVERT': {'name': 'Personal Savings Rate', 'color':  "#721a0a"},
+        'M2SL': {'name': 'M2 Money Supply', 'color':  "#0c0a72"}
     }
     
     charts = {}
