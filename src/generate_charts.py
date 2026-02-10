@@ -49,6 +49,52 @@ def create_chart(series_data, title, color='#3498db'):
     
     return image_base64
 
+def create_dual_chart(series_data1, series_data2, title, label1, label2, color1='#3498db', color2='#e74c3c'):
+    """Create a chart with two lines and show the spread"""
+    
+    fig, ax = plt.subplots(figsize=(8, 4), dpi=100)
+    
+    # Plot both series
+    ax.plot(series_data1.index, series_data1.values, color=color1, linewidth=2, label=label1)
+    ax.plot(series_data2.index, series_data2.values, color=color2, linewidth=2, label=label2)
+    
+    # Style the chart
+    ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
+    ax.set_xlabel('')
+    
+    # Add legend
+    ax.legend(loc='upper left', frameon=False)
+    
+    # Remove gridlines
+    ax.grid(False)
+    
+    # Remove background color - set to transparent
+    ax.set_facecolor('none')
+    fig.patch.set_facecolor('none')
+    
+    # Keep only bottom and left spines
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    
+    # Format x-axis dates: MMM 'YY every 4 months
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b '%y"))
+    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=4))
+    
+    # Make dates horizontal instead of diagonal
+    plt.xticks(rotation=0, ha='center')
+    
+    # Tight layout
+    plt.tight_layout()
+    
+    # Convert to base64 for email embedding with transparent background
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png', bbox_inches='tight', transparent=True)
+    buffer.seek(0)
+    image_base64 = base64.b64encode(buffer.read()).decode()
+    plt.close()
+    
+    return image_base64
+
 def generate_all_charts(fred_api_key, use_cache=True):
     """Generate charts for all economic indicators"""
     
@@ -67,6 +113,7 @@ def generate_all_charts(fred_api_key, use_cache=True):
         'CPIAUCSL': {'name': 'CPI (Inflation)', 'color': '#e67e22'},
         'DFF': {'name': 'Fed Funds Rate', 'color': '#3498db'},
         'DGS10': {'name': '10-Year Treasury Yield', 'color': '#2ecc71'},
+        'DGS30': {'name': '30-Year Treasury Yield', 'color': "#2e9fcc"},
         'UMCSENT': {'name': 'Consumer Sentiment', 'color': '#9b59b6'},
         'HOUST': {'name': 'Housing Starts', 'color':  "#401bc5"},
         'ICSA': {'name': 'Initial Jobless Claims', 'color':  "#d11884"},
@@ -93,6 +140,50 @@ def generate_all_charts(fred_api_key, use_cache=True):
                 print(f"✓ Chart generated for {info['name']}")
         except Exception as e:
             print(f"✗ Error generating chart for {info['name']}: {str(e)[:100]}")
+    
+   # Generate special dual chart: Mortgage Spreads over Treasuries
+    try:
+        print("Generating Mortgage Spread chart...")
+        mortgage_data = fred.get_series('MORTGAGE30US', observation_start=start_date)
+        treasury_30y = fred.get_series('DGS30', observation_start=start_date)
+        treasury_10y = fred.get_series('DGS10', observation_start=start_date)
+        
+        if not mortgage_data.empty and not treasury_30y.empty and not treasury_10y.empty:
+            # Calculate spreads (mortgage - treasury)
+            # Need to align the dates first
+            import pandas as pd
+            
+            # Combine all series with outer join to get all dates
+            combined = pd.DataFrame({
+                'mortgage': mortgage_data,
+                'treasury_30y': treasury_30y,
+                'treasury_10y': treasury_10y
+            })
+            
+            # Forward fill to handle missing data points
+            combined = combined.fillna(method='ffill')
+            
+            # Calculate spreads
+            spread_30y = combined['mortgage'] - combined['treasury_30y']
+            spread_10y = combined['mortgage'] - combined['treasury_10y']
+            
+            # Remove NaN values
+            spread_30y = spread_30y.dropna()
+            spread_10y = spread_10y.dropna()
+            
+            spread_chart = create_dual_chart(
+                spread_30y, 
+                spread_10y,
+                'Mortgage Rate Premium over Treasuries',
+                'Premium over 30Y Treasury',
+                'Premium over 10Y Treasury',
+                color1='#e91e63',
+                color2='#9b59b6'
+            )
+            charts['Mortgage Rate Premium'] = spread_chart
+            print("✓ Chart generated for Mortgage Rate Premium")
+    except Exception as e:
+        print(f"✗ Error generating spread chart: {str(e)[:100]}")
     
     # Cache the charts
     if cache and charts:

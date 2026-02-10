@@ -120,6 +120,24 @@
         </div>
         {% endfor %}
         
+        {% if 'Mortgage Rate Premium' in charts %}
+        <h2 style="margin-top: 40px;">Special Analysis</h2>
+        <div class="indicator">
+            <div class="indicator-name">Mortgage Rate Premium over Treasuries</div>
+            <div style="margin-top: 15px;">
+                <img src="data:image/png;base64,{{ charts['Mortgage Rate Premium'] }}" 
+                     alt="Mortgage Rate Premium Chart" 
+                     style="width: 100%; max-width: 600px; border-radius: 4px;">
+            </div>
+            <div class="data-date" style="margin-top: 10px;">
+                This chart shows the spread between 30-year mortgage rates and Treasury yields. 
+                A wider spread indicates lenders are charging higher premiums over risk-free rates, 
+                often due to increased credit risk or market volatility.
+            </div>
+        </div>
+        {% endif %}
+
+        
         <div class="footer">
             <p>Generated automatically on {{ report_date }}</p>
             <p>Data sources: Federal Reserve Economic Data (FRED)</p>

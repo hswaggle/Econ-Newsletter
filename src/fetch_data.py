@@ -16,71 +16,71 @@ class EconomicDataFetcher:
         self.fred = Fred(api_key=fred_key)
         self.cache = DataCache(cache_duration_hours=cache_duration_hours) if use_cache else None
         
-    def fetch_market_data(self):
-        """Fetch major market indices and commodities"""
+    # def fetch_market_data(self):
+    #     """Fetch major market indices and commodities"""
         
-        # Check cache first
-        if self.cache:
-            cached_data = self.cache.get('market_data')
-            if cached_data:
-                return cached_data
+    #     # Check cache first
+    #     if self.cache:
+    #         cached_data = self.cache.get('market_data')
+    #         if cached_data:
+    #             return cached_data
         
-        tickers = {
-            '^GSPC': 'S&P 500',
-            '^DJI': 'Dow Jones',
-            '^IXIC': 'Nasdaq',
-            '^VIX': 'VIX',
-            'GC=F': 'Gold',
-            'CL=F': 'Crude Oil'
-        }
+    #     tickers = {
+    #         '^GSPC': 'S&P 500',
+    #         '^DJI': 'Dow Jones',
+    #         '^IXIC': 'Nasdaq',
+    #         '^VIX': 'VIX',
+    #         'GC=F': 'Gold',
+    #         'CL=F': 'Crude Oil'
+    #     }
         
-        market_data = {}
+        # market_data = {}
         
-        # Download all at once to reduce requests
-        ticker_string = ' '.join(tickers.keys())
+        # # Download all at once to reduce requests
+        # ticker_string = ' '.join(tickers.keys())
         
-        try:
-            # Wait a bit to avoid rate limiting
-            time.sleep(2)
+        # try:
+        #     # Wait a bit to avoid rate limiting
+        #     time.sleep(2)
             
-            # Simpler download call
-            data = yf.download(ticker_string, period='5d', progress=False)
+        #     # Simpler download call
+        #     data = yf.download(ticker_string, period='5d', progress=False)
             
-            if not data.empty:
-                # Handle both single and multi-ticker data structures
-                for ticker, name in tickers.items():
-                    try:
-                        # For multiple tickers, Close is a DataFrame
-                        if isinstance(data['Close'], pd.DataFrame):
-                            if ticker in data['Close'].columns:
-                                closes = data['Close'][ticker].dropna()
-                            else:
-                                continue
-                        # For single ticker, Close is a Series
-                        else:
-                            closes = data['Close'].dropna()
+        #     if not data.empty:
+        #         # Handle both single and multi-ticker data structures
+        #         for ticker, name in tickers.items():
+        #             try:
+        #                 # For multiple tickers, Close is a DataFrame
+        #                 if isinstance(data['Close'], pd.DataFrame):
+        #                     if ticker in data['Close'].columns:
+        #                         closes = data['Close'][ticker].dropna()
+        #                     else:
+        #                         continue
+        #                 # For single ticker, Close is a Series
+        #                 else:
+        #                     closes = data['Close'].dropna()
                         
-                        if len(closes) >= 2:
-                            current = closes.iloc[-1]
-                            previous = closes.iloc[-2]
-                            change_pct = ((current - previous) / previous) * 100
+        #                 if len(closes) >= 2:
+        #                     current = closes.iloc[-1]
+        #                     previous = closes.iloc[-2]
+        #                     change_pct = ((current - previous) / previous) * 100
                             
-                            market_data[name] = {
-                                'current': round(float(current), 2),
-                                'change_pct': round(float(change_pct), 2),
-                                'date': closes.index[-1].strftime('%Y-%m-%d')
-                            }
-                            print(f"✓ Successfully fetched {name}")
-                    except Exception as e:
-                        print(f"⚠ Could not process {name}: {str(e)[:50]}")
-        except Exception as e:
-            print(f"✗ Error downloading market data: {str(e)[:100]}")
+        #                     market_data[name] = {
+        #                         'current': round(float(current), 2),
+        #                         'change_pct': round(float(change_pct), 2),
+        #                         'date': closes.index[-1].strftime('%Y-%m-%d')
+        #                     }
+        #                     print(f"✓ Successfully fetched {name}")
+        #             except Exception as e:
+        #                 print(f"⚠ Could not process {name}: {str(e)[:50]}")
+        # except Exception as e:
+        #     print(f"✗ Error downloading market data: {str(e)[:100]}")
         
-        # Cache the result
-        if self.cache and market_data:
-            self.cache.set('market_data', market_data)
+        # # Cache the result
+        # if self.cache and market_data:
+        #     self.cache.set('market_data', market_data)
             
-        return market_data
+        # return market_data
     
     def fetch_economic_indicators(self):
         """Fetch key economic indicators from FRED"""
@@ -96,6 +96,7 @@ class EconomicDataFetcher:
             'CPIAUCSL': 'CPI (Inflation)',
             'DFF': 'Fed Funds Rate',
             'DGS10': '10-Year Treasury Yield',
+            'DGS30': '30-Year Treasury Yield',
             'UMCSENT': 'Consumer Sentiment', 
             'HOUST': 'Housing Starts',
             'ICSA': 'Initial Jobless Claims',
@@ -131,16 +132,16 @@ class EconomicDataFetcher:
         return economic_data
     
     def fetch_all_data(self):
-        """Fetch all data and combine"""
-        print("Fetching market data...")
-        market_data = self.fetch_market_data()
+        # """Fetch all data and combine"""
+        # print("Fetching market data...")
+        # market_data = self.fetch_market_data()
         
         print("\nFetching economic indicators...")
         economic_data = self.fetch_economic_indicators()
         
         return {
             'timestamp': datetime.now().isoformat(),
-            'market': market_data,
+            # 'market': market_data,
             'economic': economic_data
         }
 
