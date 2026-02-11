@@ -5,7 +5,55 @@ import os
 from datetime import datetime, timedelta
 import base64
 from io import BytesIO
-from cache import DataCache  # Add this import
+from cache import DataCache
+import pandas as pd
+
+# Chart grouping configuration
+CHART_GROUPS = {
+    # Group name: [(series_id, display_name, color), ...]
+    'Personal Consumption Expenditure': [
+        ('PCEPI', 'PCE',  '#1aa526'),
+        ('PCEPILFE', 'CORE PCE', '#60159e'),
+    ],
+    'Term Premium': [
+        ('DGS10', '10-Year Treasury Yield', '#cca22e' ),
+        ('DGS30', '30-Year Treasury Yield', '#2927ae' ),
+    ],
+}
+
+# Individual charts (not grouped)
+INDIVIDUAL_CHARTS = {
+# Labor Market
+        'UNRATE': {'name': 'Unemployment Rate', 'color': '#e74c3c'},
+        'ICSA': {'name': 'Initial Jobless Claims', 'color': '#f39c12'},
+        
+        # Inflation & Growth
+        'CPIAUCSL': {'name': 'CPI (Inflation)', 'color': '#e67e22'},
+        # 'PCEPI': {'name': 'Personal Consumption Expenditure', 'color': "#1aa526"},
+        # 'DPCCRV1Q225SBEA': {'name': 'CORE PCE', 'color': "#60159e"},
+
+        # Interest Rates
+        'DFF': {'name': 'Fed Funds Rate', 'color': '#3498db'},
+        # 'DGS10': {'name': '10-Year Treasury Yield', 'color': "#cca22e"},
+        # 'DGS30': {'name': '30-Year Treasury Yield', 'color': "#2927ae"},
+        'MORTGAGE30US': {'name': '30-Year Mortgage Rate', 'color': '#e91e63'},
+        
+        # Yield Curve Spreads
+        'T10Y2Y': {'name': '10Y-2Y Treasury Spread', 'color': '#8e44ad'},
+        'T10Y3M': {'name': '10Y-3M Treasury Spread', 'color': '#9b59b6'},
+        # 'T10Y30Y': {'name': '10Y-30Y Treasury Spread', 'color': '#7d3c98'},
+        
+        # Housing
+        'HOUST': {'name': 'Housing Starts', 'color': '#1abc9c'},
+        'EXHOSLUSM495S': {'name': 'Existing Home Sales', 'color': '#16a085'},
+        
+        # Consumer & Savings
+        'UMCSENT': {'name': 'Consumer Sentiment', 'color': '#f39c12'},
+        'PSAVERT': {'name': 'Personal Savings Rate', 'color': '#d35400'},
+        
+        # Monetary
+        'M2SL': {'name': 'M2 Money Supply', 'color': '#34495e'},
+}
 
 def create_chart(series_data, title, color='#3498db'):
     """Create a clean line chart and return as base64 string"""
@@ -16,7 +64,7 @@ def create_chart(series_data, title, color='#3498db'):
     ax.plot(series_data.index, series_data.values, color=color, linewidth=2)
     
     # Style the chart
-    ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
+    # ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
     ax.set_xlabel('')
     
     # Remove gridlines
@@ -49,21 +97,24 @@ def create_chart(series_data, title, color='#3498db'):
     
     return image_base64
 
-def create_dual_chart(series_data1, series_data2, title, label1, label2, color1='#3498db', color2='#e74c3c'):
-    """Create a chart with two lines and show the spread"""
+def create_multi_line_chart(series_list, title):
+    """
+    Create a chart with multiple lines
+    series_list: [(series_data, label, color), ...]
+    """
     
     fig, ax = plt.subplots(figsize=(8, 4), dpi=100)
     
-    # Plot both series
-    ax.plot(series_data1.index, series_data1.values, color=color1, linewidth=2, label=label1)
-    ax.plot(series_data2.index, series_data2.values, color=color2, linewidth=2, label=label2)
+    # Plot all series
+    for series_data, label, color in series_list:
+        ax.plot(series_data.index, series_data.values, color=color, linewidth=2, label=label)
     
     # Style the chart
     ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
     ax.set_xlabel('')
     
     # Add legend
-    ax.legend(loc='upper left', frameon=False)
+    ax.legend(loc='best', frameon=False, fontsize=10)
     
     # Remove gridlines
     ax.grid(False)
@@ -107,29 +158,31 @@ def generate_all_charts(fred_api_key, use_cache=True):
             return cached_charts
     
     fred = Fred(api_key=fred_api_key)
-    
-    indicators = {
-        'UNRATE': {'name': 'Unemployment Rate', 'color': '#e74c3c'},
-        'CPIAUCSL': {'name': 'CPI (Inflation)', 'color': '#e67e22'},
-        'DFF': {'name': 'Fed Funds Rate', 'color': '#3498db'},
-        'DGS10': {'name': '10-Year Treasury Yield', 'color': '#2ecc71'},
-        'DGS30': {'name': '30-Year Treasury Yield', 'color': "#2e9fcc"},
-        'UMCSENT': {'name': 'Consumer Sentiment', 'color': '#9b59b6'},
-        'HOUST': {'name': 'Housing Starts', 'color':  "#401bc5"},
-        'ICSA': {'name': 'Initial Jobless Claims', 'color':  "#d11884"},
-        'MORTGAGE30US': {'name': '30-Year Mortgage Rate', 'color':  "#0b5d8d"},
-        'EXHOSLUSM495S': {'name': 'Existing Home Sales',  'color':  "#0b8d6d"},
-        'PCE': {'name': 'Personal Consumption Expenditure', 'color':  "#dabc14"},
-        'PSAVERT': {'name': 'Personal Savings Rate', 'color':  "#721a0a"},
-        'M2SL': {'name': 'M2 Money Supply', 'color':  "#0c0a72"}
-    }
-    
     charts = {}
     
     # Get data from last 2 years for context
     start_date = (datetime.now() - timedelta(days=730)).strftime('%Y-%m-%d')
     
-    for series_id, info in indicators.items():
+    # Generate grouped charts
+    for group_name, series_configs in CHART_GROUPS.items():
+        try:
+            print(f"Generating grouped chart: {group_name}...")
+            series_list = []
+            
+            for series_id, display_name, color in series_configs:
+                data = fred.get_series(series_id, observation_start=start_date)
+                if not data.empty:
+                    series_list.append((data, display_name, color))
+            
+            if series_list:
+                chart_base64 = create_multi_line_chart(series_list, group_name)
+                charts[group_name] = chart_base64
+                print(f"✓ Chart generated for {group_name}")
+        except Exception as e:
+            print(f"✗ Error generating grouped chart {group_name}: {str(e)[:100]}")
+    
+    # Generate individual charts
+    for series_id, info in INDIVIDUAL_CHARTS.items():
         try:
             print(f"Generating chart for {info['name']}...")
             data = fred.get_series(series_id, observation_start=start_date)
@@ -141,7 +194,7 @@ def generate_all_charts(fred_api_key, use_cache=True):
         except Exception as e:
             print(f"✗ Error generating chart for {info['name']}: {str(e)[:100]}")
     
-   # Generate special dual chart: Mortgage Spreads over Treasuries
+    # Generate special calculated chart: Mortgage Spreads over Treasuries
     try:
         print("Generating Mortgage Spread chart...")
         mortgage_data = fred.get_series('MORTGAGE30US', observation_start=start_date)
@@ -150,10 +203,6 @@ def generate_all_charts(fred_api_key, use_cache=True):
         
         if not mortgage_data.empty and not treasury_30y.empty and not treasury_10y.empty:
             # Calculate spreads (mortgage - treasury)
-            # Need to align the dates first
-            import pandas as pd
-            
-            # Combine all series with outer join to get all dates
             combined = pd.DataFrame({
                 'mortgage': mortgage_data,
                 'treasury_30y': treasury_30y,
@@ -171,15 +220,12 @@ def generate_all_charts(fred_api_key, use_cache=True):
             spread_30y = spread_30y.dropna()
             spread_10y = spread_10y.dropna()
             
-            spread_chart = create_dual_chart(
-                spread_30y, 
-                spread_10y,
-                'Mortgage Rate Premium over Treasuries',
-                'Premium over 30Y Treasury',
-                'Premium over 10Y Treasury',
-                color1='#e91e63',
-                color2='#9b59b6'
-            )
+            series_list = [
+                (spread_30y, 'Premium over 30Y Treasury', '#e91e63'),
+                (spread_10y, 'Premium over 10Y Treasury', '#9b59b6')
+            ]
+            
+            spread_chart = create_multi_line_chart(series_list, 'Mortgage Rate Premium over Treasuries')
             charts['Mortgage Rate Premium'] = spread_chart
             print("✓ Chart generated for Mortgage Rate Premium")
     except Exception as e:

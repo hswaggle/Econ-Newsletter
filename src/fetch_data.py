@@ -92,23 +92,39 @@ class EconomicDataFetcher:
                 return cached_data
         
         indicators = {
-            'UNRATE': 'Unemployment Rate',
-            'CPIAUCSL': 'CPI (Inflation)',
-            'DFF': 'Fed Funds Rate',
-            'DGS10': '10-Year Treasury Yield',
-            'DGS30': '30-Year Treasury Yield',
-            'UMCSENT': 'Consumer Sentiment', 
-            'HOUST': 'Housing Starts',
-            'ICSA': 'Initial Jobless Claims',
-            'MORTGAGE30US': '30-Year Mortgage Rate',
-            'EXHOSLUSM495S': 'Existing Home Sales',
-            'PCE': 'Personal Consumption Expenditure',
-            'PSAVERT': 'Personal Savings Rate',
-            'M2SL': 'M2 Money Supply'
+            # Labor Market
+            'UNRATE': {'name': 'Unemployment Rate', 'section': 'Labor Market'},
+            'ICSA': {'name': 'Initial Jobless Claims', 'section': 'Labor Market'},
+            
+            # Inflation & Growth
+            'CPIAUCSL': {'name': 'CPI (Inflation)', 'section': 'Inflation & Growth'},
+            'PCEPI': {'name': 'Personal Consumption Expenditure', 'section': 'Inflation & Growth'},
+            'PCEPILFE': {'name': 'CORE PCE', 'section': 'Inflation & Growth'},
+            
+            # Interest Rates
+            'DFF': {'name': 'Fed Funds Rate', 'section': 'Interest Rates'},
+            'DGS10': {'name': 'Term Premium', 'section': 'Interest Rates'},
+            'DGS30': {'name': '30-Year Treasury Yield'},
+            'MORTGAGE30US': {'name': '30-Year Mortgage Rate', 'section': 'Interest Rates'},
+            
+            # Yield Curve Spreads
+            'T10Y2Y': {'name': '10Y-2Y Treasury Spread', 'section': 'Yield Curve'},
+            'T10Y3M': {'name': '10Y-3M Treasury Spread', 'section': 'Yield Curve'},
+            
+            # Housing
+            'HOUST': {'name': 'Housing Starts', 'section': 'Housing'},
+            'EXHOSLUSM495S': {'name': 'Existing Home Sales', 'section': 'Housing'},
+            
+            # Consumer & Savings
+            'UMCSENT': {'name': 'Consumer Sentiment', 'section': 'Consumer & Savings'},
+            'PSAVERT': {'name': 'Personal Savings Rate', 'section': 'Consumer & Savings'},
+            
+            # Monetary
+            'M2SL': {'name': 'M2 Money Supply', 'section': 'Monetary'}
         }
         
         economic_data = {}
-        for series_id, name in indicators.items():
+        for series_id, info in indicators.items():
             try:
                 data = self.fred.get_series(series_id)
                 if not data.empty:
@@ -116,14 +132,15 @@ class EconomicDataFetcher:
                     previous = data.iloc[-2] if len(data) > 1 else current
                     change = current - previous
                     
-                    economic_data[name] = {
+                    economic_data[info['name']] = {
                         'current': round(current, 2),
                         'change': round(change, 2),
-                        'date': data.index[-1].strftime('%Y-%m-%d')
+                        'date': data.index[-1].strftime('%Y-%m-%d'),
+                        'section': info['section']  # Add section info
                     }
-                    print(f"✓ Successfully fetched {name}")
+                    print(f"✓ Successfully fetched {info['name']}")
             except Exception as e:
-                print(f"✗ Error fetching {name}: {str(e)[:100]}")
+                print(f"✗ Error fetching {info['name']}: {str(e)[:100]}")
         
         # Cache the result
         if self.cache and economic_data:
