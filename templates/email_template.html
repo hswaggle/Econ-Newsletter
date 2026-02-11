@@ -124,29 +124,94 @@
             {% if section_name in sections %}
                 <h3 style="color: #34495e; margin-top: 30px; margin-bottom: 15px; font-size: 1.2em; border-bottom: 2px solid #ecf0f1; padding-bottom: 5px;">{{ section_name }}</h3>
                 
+                {% set already_shown = [] %}
+                
                 {% for name, data in sections[section_name] %}
-                <div class="indicator">
-                    <div class="indicator-name">{{ name }}</div>
-                    <div class="indicator-value">{{ data.current }}{% if 'Rate' in name or 'Treasury' in name or 'Yield' in name or 'Spread' in name %}%{% endif %}</div>
-                    <div>
-                        {% if data.change > 0 %}
-                            <span class="change positive">&uarr; +{{ data.change }}</span>
-                        {% elif data.change < 0 %}
-                            <span class="change negative">&darr; {{ data.change }}</span>
+                    {% if name not in already_shown and name not in hidden_indicators %}
+                        
+                        {# Check if this indicator is the first in a group #}
+                        {% set is_group_start = false %}
+                        {% set current_group = '' %}
+                        {% for group_name, group_members in indicator_groups.items() %}
+                            {% if name == group_members[0] %}
+                                {% set is_group_start = true %}
+                                {% set current_group = group_name %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if is_group_start %}
+                            {# Grouped display: indicators side by side with chart to right #}
+                            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin: 15px 0; border-collapse: collapse;">
+                                <tr>
+                                    {# Left: Two indicators side by side #}
+                                    <td width="60%" style="padding-right: 15px; vertical-align: top; box-sizing: border-box;">
+                                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                                            <tr>
+                                                {% for member_name in indicator_groups[current_group] %}
+                                                    {% if member_name in economic %}
+                                                        {% set member_data = economic[member_name] %}
+                                                        <td width="50%" style="padding-right: 8px; padding-bottom: 0; vertical-align: top; box-sizing: border-box;">
+                                                            <div class="indicator" style="margin: 0; background-color: #FFFFFF;">
+                                                                <div class="indicator-name">{{ member_name }}</div>
+                                                                <div class="indicator-value">{{ member_data.current }}</div>
+                                                                <div>
+                                                                    {% if member_data.change > 0 %}
+                                                                        <span class="change positive">&uarr; +{{ member_data.change }}</span>
+                                                                    {% elif member_data.change < 0 %}
+                                                                        <span class="change negative">&darr; {{ member_data.change }}</span>
+                                                                    {% else %}
+                                                                        <span class="change neutral">&rarr; No change</span>
+                                                                    {% endif %}
+                                                                </div>
+                                                                <div class="data-date">As of {{ member_data.date }}</div>
+                                                            </div>
+                                                        </td>
+                                                        {% set _ = already_shown.append(member_name) %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    
+                                    {# Right: Chart #}
+                                    <td width="40%" style="vertical-align: top; box-sizing: border-box;">
+                                        {% if charts and current_group in charts %}
+                                            <img src="data:image/png;base64,{{ charts[current_group] }}" 
+                                                 alt="{{ current_group }} Chart" 
+                                                 style="width: 100%; border-radius: 4px; display: block;">
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        
                         {% else %}
-                            <span class="change neutral">&rarr; No change</span>
+                            {# Single indicator display #}
+                            <div class="indicator">
+                                <div class="indicator-name">{{ name }}</div>
+                                <div class="indicator-value">{{ data.current }}{% if 'Rate' in name or 'Treasury' in name or 'Yield' in name or 'Spread' in name %}%{% endif %}</div>
+                                <div>
+                                    {% if data.change > 0 %}
+                                        <span class="change positive">&uarr; +{{ data.change }}</span>
+                                    {% elif data.change < 0 %}
+                                        <span class="change negative">&darr; {{ data.change }}</span>
+                                    {% else %}
+                                        <span class="change neutral">&rarr; No change</span>
+                                    {% endif %}
+                                </div>
+                                <div class="data-date">As of {{ data.date }}</div>
+                                
+                                {% if charts and name in charts %}
+                                <div style="margin-top: 15px;">
+                                    <img src="data:image/png;base64,{{ charts[name] }}" 
+                                         alt="{{ name }} Chart" 
+                                         style="width: 100%; max-width: 600px; border-radius: 4px;">
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            {% set _ = already_shown.append(name) %}
                         {% endif %}
-                    </div>
-                    <div class="data-date">As of {{ data.date }}</div>
-                    
-                    {% if charts and name in charts %}
-                    <div style="margin-top: 15px;">
-                        <img src="data:image/png;base64,{{ charts[name] }}" 
-                             alt="{{ name }} Chart" 
-                             style="width: 100%; max-width: 600px; border-radius: 4px;">
-                    </div>
                     {% endif %}
-                </div>
                 {% endfor %}
             {% endif %}
         {% endfor %}

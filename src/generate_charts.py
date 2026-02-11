@@ -21,6 +21,32 @@ CHART_GROUPS = {
     ],
 }
 
+# Map: which grouped indicators should appear together and which chart to use
+INDICATOR_GROUPS = {
+    'Personal Consumption Expenditure': [
+        'Personal Consumption Expenditure',
+        'CORE PCE',
+    ],
+    'Term Premium': [
+        'Term Premium',
+        '30-Year Treasury Yield',
+    ],
+}
+
+# Map: indicator name to its group chart
+GROUP_TO_CHART = {
+    'Personal Consumption Expenditure': 'Personal Consumption Expenditure',
+    'CORE PCE': 'Personal Consumption Expenditure',
+    'Term Premium': 'Term Premium',
+    '30-Year Treasury Yield': 'Term Premium',
+}
+
+# Indicators that should be hidden (only shown in grouped display)
+HIDDEN_INDICATORS = [
+    'CORE PCE',
+    '30-Year Treasury Yield',
+]
+
 # Individual charts (not grouped)
 INDIVIDUAL_CHARTS = {
 # Labor Market
@@ -109,8 +135,8 @@ def create_multi_line_chart(series_list, title):
     for series_data, label, color in series_list:
         ax.plot(series_data.index, series_data.values, color=color, linewidth=2, label=label)
     
-    # Style the chart
-    ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
+    # # Style the chart
+    # ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
     ax.set_xlabel('')
     
     # Add legend

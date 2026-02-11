@@ -2,7 +2,7 @@ from jinja2 import Template
 from datetime import datetime
 import json
 import os
-from generate_charts import generate_all_charts
+from generate_charts import generate_all_charts, INDICATOR_GROUPS, HIDDEN_INDICATORS, GROUP_TO_CHART
 
 def generate_html_report(data, include_charts=True):
     """Generate HTML email report from data"""
@@ -32,7 +32,10 @@ def generate_html_report(data, include_charts=True):
     html = template.render(
         report_date=report_date,
         economic=data.get('economic', {}),
-        charts=charts
+        charts=charts,
+        indicator_groups=INDICATOR_GROUPS,
+        hidden_indicators=HIDDEN_INDICATORS,
+        group_to_chart=GROUP_TO_CHART,
     )
     
     return html, charts

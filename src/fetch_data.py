@@ -104,7 +104,7 @@ class EconomicDataFetcher:
             # Interest Rates
             'DFF': {'name': 'Fed Funds Rate', 'section': 'Interest Rates'},
             'DGS10': {'name': 'Term Premium', 'section': 'Interest Rates'},
-            'DGS30': {'name': '30-Year Treasury Yield'},
+            'DGS30': {'name': '30-Year Treasury Yield', 'section': 'Interest Rates'},
             'MORTGAGE30US': {'name': '30-Year Mortgage Rate', 'section': 'Interest Rates'},
             
             # Yield Curve Spreads
